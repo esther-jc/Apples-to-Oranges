@@ -1,0 +1,82 @@
+<!doctype html>
+<!-- Written by: Esther Choe
+Date: March 31, 2021
+This description demonstrates aspects of my final project creative scene for 
+CS 307, including a link to the demo.-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CS 307 Final Project: Apples to Oranges</title>
+<link href="https://cs.wellesley.edu/~cs307/307.css" rel="stylesheet" type="text/css"/>
+<style>
+      
+</style>
+</head>
+<body>
+<h1>CS 307 Final Project: Apples to Oranges</h1>
+<h2>Esther Choe</h2>
+
+<p><b>Overview: </b>My project scene is inspired by the phrase "comparing 
+    apples to oranges," so I decided to make a basketball game scene of 
+    apples to oranges, with bunny spectators. 
+    <a href="https://cs.wellesley.edu/~echoe2/cs307-graphics-project-final/project.html">
+        This is the link to the demo.</a></p>
+
+<img src="basketballScene.png" alt="basketball scene">
+
+<p>I used the following graphics concepts in my project:</p>
+<ul>
+    <li>hierarchial modeling</li>
+    <li>material, lighting, and shading</li>
+    <li>curved lines/surfaces</li>
+    <li>textures and texture-mapping</li>
+    <li>animation</li>
+</ul>
+
+<br>
+<h2>Individual Objects</h2>
+<h4>Gym Room Setting: </h4>
+    <p>The gym floor, bleachers background, and ceiling 
+        were produced from texture-mapping.</p>
+    <img src="floor.png" alt="gym floor">
+    <img src="bleachersback.png" alt="bleachers background">
+    <img src="gymCeil.png" alt="gym ceiling">
+
+<h4>Basketball Equipment</h4>
+    <p>The basketball and the hoop/stand used texture-mapping on 
+        geometry objects. Phong material was used for these objects
+        to reflect light. The hoop's stand was created from three 
+        cylinders, where the base used two different radii.</p>
+    <img src="ball.png" alt="basketball">
+    <img src="hoop.png" alt="basketball hoop">
+    <img src="stand.png" alt="basketball stand">
+
+<h4>Bunny</h4>
+    <p>The bunny was made with hierarchial modeling using Phong. 
+        The geometry objects were mostly spheres that were scaled.</p>
+    <img src="bunny.png" alt="bunny character">
+
+<h4>Apples and Oranges</h4>
+    <p>The apples and oranges also used hierarchial modeling and Phong material. 
+        The brown stem was made from Torus geometry and the green leaf was 
+        from a Bezier curve of 16 points. The apple had two bezier leaves and 
+        eyebrows, while the orange had one bezier leaf and glasses.</p>
+    <img src="apple.png" alt="apple fruit character">
+    <img src="orange.png" alt="orange fruit character">
+
+<h4>Lighting</h4>
+    <p>Ambient and Directional light were used to light the overall scene.</p>
+
+<br>
+<h2>Animation</h2>
+<p>The animation consists of three moving objects: the scoreboard, the basketball,
+    and orange player near the center. 
+    The basketball is dribbled on the floor between the apple and the orange. 
+    The orange moves in the z-direction, to bounce the ball back to the apple.
+    While this occurs, the scoreboard is animated by rotating around the y-axis,
+    displaying the score to the audience / players looking from down below.</p>
+    <img src="ballAnimation.png" alt="animated basketball">
+    <img src="score.png" alt="animated scoreboard">
+<br><br>
+</body>
+</html>

@@ -1,0 +1,1142 @@
+
+<!DOCTYPE html>
+<!-- Author: Esther Choe 
+Date: March 31, 2021
+The purpose of this project is to make a creative scene
+using concepts we've learned in class-->
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>CS 307 Project</title>
+<style>
+      /* feel free to style the canvas any way you want. If you want it to
+      use the entire window, set width: 100% and height: 100%. */
+      
+      canvas {
+          display: block;
+          margin: 10px auto;
+          width: 70%;
+          height: 500px;
+      }
+    </style>
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/three-r95.all.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/three-r80.min.js"
+</script>
+<!-- omit dat.gui and OrbitControls if you don't need them -->
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/OrbitControls-r95.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/OrbitControls-r80.js"
+</script>
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/dat.gui-r95.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/dat.gui-r80.min.js"
+</script>
+<script src="https://cs.wellesley.edu/~cs307/threejs/libs/tw-sp21.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/tw-fa18.js"
+</script><script src="https://cs.wellesley.edu/~cs307/threejs/libs/tw-sp21.js">
+"https://cs.wellesley.edu/~cs307/threejs/libs/tw-fa18.js"
+</script>
+</head>
+<body>
+<h1>CS 307 Creative Scene: Apples to Oranges</h1>
+<h3> Esther Choe</h3>
+<p> Basketball game scene of apples to oranges, with bunny spectators.</p>
+
+<script>
+
+// general setup components
+
+var scene = new THREE.Scene();
+
+var renderer = new THREE.WebGLRenderer();
+
+TW.mainInit(renderer,scene);
+
+TW.cameraSetup(renderer,
+               scene,
+               {minx: -150, maxx: 150,
+                miny: -80, maxy: 80,
+                minz: -100, maxz: 100});
+
+// ====================================================================
+
+// global variables for bunny dimensions
+var bunnyHeadR = 20; // head radius
+var bunnyBodyR = 14; // body radius
+var bunnyLimbR = 4; // limb radius
+var bunnyLimbL = 24; // limb length
+
+// global parameters for colored materials of bunny parts 
+var bunnyMat = [
+    // white body
+    new THREE.MeshPhongMaterial( {
+    color: new THREE.Color(0xFFFFFF),
+    specular: new THREE.Color("gray"),
+    shininess: 10}),
+
+    // dark gray eyes
+    new THREE.MeshPhongMaterial( {
+    color: new THREE.Color(0x595959),
+    specular: new THREE.Color("gray"),
+    shininess: 5}),
+
+    // pink nose
+    new THREE.MeshPhongMaterial( {
+    color: new THREE.Color(0xff96e5),
+    specular: new THREE.Color("gray"),
+    shininess: 5}),
+
+    // light pink ears
+    new THREE.MeshPhongMaterial( {
+    color: new THREE.Color(0xf5c1e8),
+    specular: new THREE.Color("gray"),
+    shininess: 10})
+];
+
+// createBunny() creates a bunny with the input radii of the
+// head, body, and limbs, and the input length of the limbs
+function createBunny (headR, bodyR, limbR, limbL) {
+	var bunny = new THREE.Object3D();
+
+    // make the head and add to the bunny
+    var head = makeHead(headR);
+    head.position.y = headR + 2.2*bodyR + limbL;
+    bunny.add(head);
+
+    // make the body and add to the bunny
+    var body = makeBody(limbR, limbL, bodyR);
+    body.position.y = 3*bodyR;
+    bunny.add(body);
+
+    // return the final bunny object
+        return bunny;
+	}
+
+    // makeBody() creates the overall body with a body, two feet, 
+    // two arms, and a tail
+    function makeBody (limbR, limbL, bodyR) {
+		body = new THREE.Object3D();
+
+        // make the torso and add to the body
+        var torsoGeom = new THREE.SphereGeometry(bodyR, 30, 30);
+        var torso = new THREE.Mesh(torsoGeom, bunnyMat[0]);
+        // scale the body in y to make it look like an elongated ellipse
+        torso.scale.x = 1.25;
+        body.add(torso);
+
+        // make the tail and add to the body
+        var tailGeom = new THREE.SphereGeometry(1.5*limbR, 30, 30);
+		var tail = new THREE.Mesh(tailGeom, bunnyMat[0]);
+        tail.position.set(0, -0.5*bodyR, -bodyR);
+        body.add(tail);
+
+        // make the feet and add them to the body
+        var footL = makeFoot(limbR, limbL);
+        footL.position.set(-bodyR, -0.6*bodyR, 0.5*bodyR);
+        footL.rotation.x = Math.PI/2;
+        footL.rotation.z = Math.PI/6;
+        body.add(footL);
+        footR = footL.clone();
+        footR.position.x = bodyR;
+        footR.rotation.z = -Math.PI/6;
+        body.add(footR);
+
+        // make the arms and add them to the body
+        var armL = makeArm(limbR, limbL);
+        armL.position.set(-0.5*bodyR, bodyR, 0);
+        armL.rotation.z = -Math.PI/3;
+        body.add(armL);
+        var armR = armL.clone();
+        armR.position.x = 0.5*bodyR;
+        armR.rotation.z = Math.PI/3;
+        body.add(armR);
+
+        // return the final body object
+        return body;
+    }
+    
+    // makefoot() makes a single foot
+    function makeFoot (limbR, limbL) {
+        var foot = new THREE.Object3D();
+
+        // make a sphere mesh and add to the foot
+        var footGeom = new THREE.SphereGeometry(2*limbR, 30, 30);
+		var footM = new THREE.Mesh(footGeom, bunnyMat[0]);
+        footM.scale.y = 2;
+        foot.add(footM);
+
+        // return the final foot object
+        return foot;
+    }
+
+    // makeArm() makes a single arm
+    function makeArm (limbR, limbL) {
+        var arm = new THREE.Object3D();
+
+        // make a sphere mesh and add to the arm
+        var armGeom = new THREE.SphereGeometry(1.25*limbR, 30, 30);
+		var armM = new THREE.Mesh(armGeom, bunnyMat[0]);
+        armM.scale.y = 3;
+        armM.position.y = -limbL/2;
+        arm.add(armM);
+
+        // return the final arm object
+        return arm;
+    }
+
+	// makeHead() creates a head with a face, two ears, two eyes,
+	// a mouth and a nose. All of the proportions are based on the
+    // radius of the head
+	function makeHead (headR) {
+		var head = new THREE.Object3D();
+
+        // make a sphere and add to the head
+		var faceGeom = new THREE.SphereGeometry(headR, 30, 30);
+		var face = new THREE.Mesh(faceGeom, bunnyMat[0]);
+        face.scale.x = 1.25;
+        head.add(face);
+
+        // make left and right eyes and add to the head
+		var eyeGeom = new THREE.SphereGeometry(0.08*headR, 30, 30);
+        var eyeL = new THREE.Mesh(eyeGeom, bunnyMat[1]);
+        eyeL.position.set(-0.5*headR, 0, 0.95*headR);
+        head.add(eyeL);
+        var eyeR = eyeL.clone();
+		eyeR.position.x = 0.5*headR;
+        head.add(eyeR);
+
+        // make nose and add to the head
+		var noseGeom = new THREE.SphereGeometry(0.07*headR, 30, 30);
+		var nose = new THREE.Mesh(noseGeom, bunnyMat[2]);
+        nose.position.set(0, -0.15*headR, headR);
+        nose.scale.x = 1.15;
+        head.add(nose);
+
+        // make left and right ears and add to the head
+		var earL = makeEar(headR);
+        earL.position.x = 0.5*headR;
+        earL.position.y = 1.3*headR;
+        head.add(earL);
+		var earR = earL.clone();
+		earR.position.x = -0.5*headR;
+        earR.position.y = 1.3*headR;
+        head.add(earR);
+
+        // make mouth and add to the head
+		var mouthGeom = new THREE.TorusGeometry(0.15*headR, 
+                        0.04*headR, 30, 30, 3*Math.PI/4);
+		var mouth = new THREE.Mesh(mouthGeom, bunnyMat[1]);
+        mouth.position.set(0, -0.25*headR, 0.92*headR);
+		mouth.rotation.set(Math.PI, 0, Math.PI/8);
+        head.add(mouth);
+
+        // return the final head object
+		return head;
+	}
+
+    // makeEar() makes a single ear
+    function makeEar (headR) {
+        var ear = new THREE.Object3D();
+        var earR = 0.4*headR;
+
+        // outer ear: make a sphere mesh and add to the ear
+        var earGeom = new THREE.SphereGeometry(earR, 30, 30);
+		var earM = new THREE.Mesh(earGeom, bunnyMat[0]);
+        earM.scale.y = 2;
+        ear.add(earM);
+
+        // inner ear (pink)
+        var earInGeom = new THREE.CircleGeometry(0.4*earR,32);
+        var earInM = new THREE.Mesh(earInGeom, bunnyMat[3]);
+        earInM.scale.y = 3;
+        earInM.position.z = earR;
+        earInM.position.y = -0.8*earR;
+        ear.add(earInM);
+
+        // return the final ear object
+        return ear;
+    }
+
+// create bunny objects and add to scene
+var bunny1 = createBunny(bunnyHeadR, bunnyBodyR, bunnyLimbR, bunnyLimbL);
+bunny1.position.y = -175;
+bunny1.position.z = -120;
+scene.add(bunny1);
+
+var bunny2 = bunny1.clone();
+bunny2.position.x = 140;
+scene.add(bunny2);
+
+var bunny3 = bunny1.clone();
+bunny3.position.x = 200;
+bunny3.rotation.y = -Math.PI/6;
+scene.add(bunny3);
+
+var bunny4 = bunny1.clone();
+bunny4.position.x = -200;
+bunny4.position.z = 120;
+bunny4.rotation.y = -5*Math.PI/4;
+scene.add(bunny4);
+
+// ====================================================================
+
+// making the orange
+
+// orange's global variables
+var orangeR = 30;
+var orangeLimbR = 2;
+var orangeLimbL = 30;
+
+// global parameters for colored materials of orange parts 
+var orangeMat = [
+    // orange body
+    new THREE.MeshPhongMaterial( {
+    color: new THREE.Color(0xffa600),
+    specular: new THREE.Color("gray"),
+    shininess: 10}),
+
+    // dark gray eyes
+    new THREE.MeshPhongMaterial( {
+    color: new THREE.Color(0x595959),
+    specular: new THREE.Color("gray"),
+    shininess: 5}),
+
+    // magenta shoes
+    new THREE.MeshPhongMaterial( {
+    color: new THREE.Color(0xd221db),
+    specular: new THREE.Color("gray"),
+    shininess: 15}),
+
+    // brown stem
+    new THREE.MeshPhongMaterial( {
+    color: new THREE.Color(0x784c08),
+    specular: new THREE.Color("gray"),
+    shininess: 5}),
+
+    // green leaf
+    new THREE.MeshPhongMaterial( { 
+    color: new THREE.Color(0x10781d),
+    specular: new THREE.Color("gray"),
+    shininess: 5,
+    side: THREE.DoubleSide} )
+];
+
+// constructing the orange with body and limb radii, and limb length
+function makeOrange(bodyR,limbR,limbL) {
+    var orange = new THREE.Object3D();
+
+    // make the body and add
+    var body = makeBody(limbR, limbL, bodyR);
+    // body.position.y = 3*bodyR;
+    orange.add(body);
+
+    // return the final orange object
+    return orange;
+
+    // makeBody() creates the overall body with a torso, two feet, 
+    // two arms, two legs, face features, and a leaf
+    function makeBody (limbR, limbL, bodyR) {
+		body = new THREE.Object3D();
+
+        // make the main head/torso and add to the body
+        var mainGeom = new THREE.SphereGeometry(bodyR, 30, 30);
+        var main = new THREE.Mesh(mainGeom, orangeMat[0]);
+        body.add(main);
+
+        // make the legs and add them to the body
+        var legL = makeLeg(limbR, limbL);
+        legL.position.set(-0.4*bodyR, -0.7*bodyR,0);
+        body.add(legL);
+        legR = legL.clone();
+        legR.position.x = 0.4*bodyR;
+        body.add(legR);
+
+        // make the arms and add them to the body
+        var armL = makeArm(limbR, limbL);
+        armL.position.set(-0.7*bodyR, 0, 0);
+        armL.rotation.z = -Math.PI/4;
+        body.add(armL);
+        var armR = armL.clone();
+        armR.position.x = 0.7*bodyR;
+        armR.rotation.z = Math.PI/4;
+        body.add(armR);
+
+        // make the eyes and add to body
+        var eyeL = makeEye(bodyR);
+        eyeL.position.set(-0.4*bodyR, 0, 0.95*bodyR);
+        body.add(eyeL);
+        var eyeR = eyeL.clone();
+		eyeR.position.x = 0.4*bodyR;
+        body.add(eyeR);
+
+        // make glasses and add to body
+        var glasses = makeGlasses(bodyR);
+        glasses.position.set(0,0.05*bodyR,bodyR);
+        body.add(glasses);
+        
+        // make the mouth and add to body
+        var mouth = makeMouth(bodyR);
+        mouth.position.set(0, -0.25*bodyR, 0.92*bodyR);
+		mouth.rotation.set(Math.PI, 0, Math.PI/8);
+        body.add(mouth);
+
+        // make the leaf/top part and add to body
+        var top = makeTop(limbR,limbL);
+        top.position.set(0,0.8*bodyR,0);
+        body.add(top);
+
+        // return the final body object
+        return body;
+    }
+
+    function makeLeg (limbR, limbL) {
+        var leg = new THREE.Object3D();
+
+        // make a cylinder mesh and add to the leg
+        var legG = new THREE.CylinderGeometry(limbR, limbR, limbL, 20, 20);
+        var legM = new THREE.Mesh(legG, orangeMat[0]);
+        legM.position.y = -limbL/2;
+        leg.add(legM);
+
+        // make a half-sphere foot and add to the leg
+        var footG = new THREE.SphereGeometry(4*limbR, 30, 30, 0, 
+                    2*Math.PI, 0, Math.PI/2);
+        var foot = new THREE.Mesh(footG, orangeMat[2]);
+        foot.position.y = -limbL;
+        foot.position.z = 3*limbR;
+        foot.scale.z = 1.5;
+        leg.add(foot);
+
+        // return the final leg object
+        return leg;
+    }
+
+    // makeArm() makes a single arm with a hand
+    function makeArm (limbR, limbL) {
+		var arm = new THREE.Object3D();
+
+        // make a cylinder mesh and add to the arm
+        var armG = new THREE.CylinderGeometry(limbR, limbR, limbL, 20, 20);
+		var armM = new THREE.Mesh(armG, orangeMat[0]);
+        armM.position.y = -limbL/2;
+        arm.add(armM);
+
+        // make a spherical hand and add to the arm
+		var handG = new THREE.SphereGeometry(3*limbR, 30, 30);
+		var hand = new THREE.Mesh(handG, orangeMat[0]);
+		hand.position.y = -limbL;
+        arm.add(hand);
+
+        // return the final arm object
+        return arm;
+    }
+
+    function makeEye (bodyR) {
+        // make left and right eyes and add
+		var eyeGeom = new THREE.SphereGeometry(0.06*bodyR, 30, 30);
+        var eye = new THREE.Mesh(eyeGeom, orangeMat[1]);
+        return eye;
+    }
+
+    function makeGlasses (bodyR) {
+        // make glasses and add
+        var glasses = new THREE.Object3D();
+
+        // lense
+        var lense1G = new THREE.TorusGeometry( bodyR*0.25, bodyR/30, 16, 100 );
+        var lense1 = new THREE.Mesh(lense1G, orangeMat[2]);
+        lense1.position.x = -12;
+
+        var lense2 = lense1.clone();
+        lense2.position.x = 12;
+
+        glasses.add(lense1);
+        glasses.add(lense2);
+
+        // bridge
+        var bridgeGeom = new THREE.CylinderGeometry( bodyR/30, bodyR/30, 8, 32 );
+        var bridge = new THREE.Mesh(bridgeGeom, orangeMat[2]);
+        bridge.rotation.z = Math.PI/2;
+        glasses.add(bridge);
+
+        return glasses;
+    }
+    
+    function makeMouth (bodyR) {
+        // make mouth and add
+        var mouthGeom = new THREE.TorusGeometry(0.15*bodyR, 
+                        0.04*bodyR, 30, 30, 3*Math.PI/4);
+		var mouth = new THREE.Mesh(mouthGeom, orangeMat[1]);
+        return mouth;
+    }   
+
+    function makeTop (limbR,limbL) {
+        var top = new THREE.Object3D();
+
+        // make brown stem
+        var stemGeom = new THREE.TorusGeometry(0.5*limbL,
+                       limbR, 30, 30, Math.PI/2);
+        var stem = new THREE.Mesh(stemGeom, orangeMat[3]);
+        stem.rotation.z = Math.PI/1.5;
+        stem.rotation.y = Math.PI;
+        stem.position.set(-0.5*limbL,limbR*5,0);
+        top.add(stem);
+
+        // make green leaf
+        var topToBottom = [
+            [ [-5,5,0],  [2,6,1],  [4,4,1],  [6, 3, 0] ],
+            [ [-1,2,0], [2,2,1],  [4,2,1],  [7, 2, 0] ],
+            [ [-1,1,0], [2,1,1],  [4,1,1],  [7, 1, 0] ],
+            [ [0,0,0],  [2,-1,0], [4,-1,0], [9, 0, 0] ],
+        ];
+
+        var leafGeom = new THREE.BezierSurfaceGeometry( topToBottom.reverse(), 
+                10, 10 );
+        var leaf = new THREE.Mesh(leafGeom, orangeMat[4]);
+        leaf.scale.x = 2;
+        leaf.scale.y = 2;
+        leaf.position.set(-0.5*limbL,limbR*4,0);
+        top.add(leaf);
+
+        // return the final leaf + stem object
+        return top;
+    }
+}
+
+// orange1 is animated, so its code is located in the animation section below
+
+// adding other oranges to the scene
+var orange2 = makeOrange(orangeR,orangeLimbR,orangeLimbL);
+orange2.position.x = 70;
+orange2.position.y = -100;
+orange2.position.z = -110;
+scene.add(orange2);
+
+var orange3 = orange2.clone();
+orange3.position.x = 200;
+orange3.position.z = 110;
+orange3.rotation.y = 5*Math.PI/4;
+scene.add(orange3);
+
+// ====================================================================
+
+// making the apple:
+// the apple function is generally the same as the orange except with
+// different features such as the addition of another leaf and eyebrows.
+// this also had the purpose of testing different geometries on the apple
+
+// apple's global variables
+var appleR = 30;
+var appleLimbR = 2;
+var appleLimbL = 30;
+
+// global parameters for colored materials of apple parts 
+var appleMat = [
+    // red body
+    new THREE.MeshPhongMaterial( {
+    color: new THREE.Color(0xdb4d4d),
+    specular: new THREE.Color("gray"),
+    shininess: 10}),
+
+    // dark gray eyes
+    new THREE.MeshPhongMaterial( {
+    color: new THREE.Color(0x595959),
+    specular: new THREE.Color("gray"),
+    shininess: 5}),
+
+    // cyan shoes
+    new THREE.MeshPhongMaterial( {
+    color: new THREE.Color(0x37d4d1),
+    specular: new THREE.Color("gray"),
+    shininess: 15}),
+
+    // brown stem
+    new THREE.MeshPhongMaterial( {
+    color: new THREE.Color(0x784c08),
+    specular: new THREE.Color("gray"),
+    shininess: 5}),
+
+    // green leaf
+    new THREE.MeshPhongMaterial( { 
+    color: new THREE.Color(0x10781d),
+    specular: new THREE.Color("gray"),
+    shininess: 5,
+    side: THREE.DoubleSide} )
+];
+
+// constructing the apple
+function makeApple(bodyR,limbR,limbL) {
+    var apple = new THREE.Object3D();
+
+    // make the body and add
+    var body = makeBody(limbR, limbL, bodyR);
+    // body.position.y = 3*bodyR;
+    apple.add(body);
+
+    // return the final apple object
+    return apple;
+
+    // makeBody() creates the overall body with a torso, two feet, 
+    // two arms, two legs, face features, and a leaf
+    function makeBody (limbR, limbL, bodyR) {
+		body = new THREE.Object3D();
+
+        // make the main head/torso and add to the body
+        var mainGeom = new THREE.SphereGeometry(bodyR, 30, 30);
+        var main = new THREE.Mesh(mainGeom, appleMat[0]);
+        body.add(main);
+
+        // make the legs and add them to the body
+        var legL = makeLeg(limbR, limbL);
+        legL.position.set(-0.4*bodyR, -0.7*bodyR,0);
+        body.add(legL);
+        legR = legL.clone();
+        legR.position.x = 0.4*bodyR;
+        body.add(legR);
+
+        // make the arms and add them to the body
+        var armL = makeArm(limbR, limbL);
+        armL.position.set(-0.7*bodyR, 0, 0);
+        armL.rotation.z = -Math.PI/4;
+        body.add(armL);
+        var armR = armL.clone();
+        armR.position.x = 0.7*bodyR;
+        armR.rotation.z = Math.PI/4;
+        body.add(armR);
+
+        // make the eyes and add to body
+        var eyeL = makeEye(bodyR);
+        eyeL.position.set(-0.4*bodyR, 0, 0.95*bodyR);
+        body.add(eyeL);
+        var eyeR = eyeL.clone();
+		eyeR.position.x = 0.4*bodyR;
+        body.add(eyeR);
+        
+        // make the mouth and add to body
+        var mouth = makeMouth(bodyR);
+        mouth.position.set(0, -0.25*bodyR, 0.92*bodyR);
+		mouth.rotation.set(Math.PI, 0, Math.PI/8);
+        body.add(mouth);
+
+        // make the leaf/top part and add to body
+        var top = makeTop(limbR,limbL);
+        top.position.set(0,0.8*bodyR,0);
+        body.add(top);
+
+        // return the final body object
+        return body;
+    }
+
+    function makeLeg (limbR, limbL) {
+        var leg = new THREE.Object3D();
+
+        // make a cylinder mesh and add to the leg
+        var legG = new THREE.CylinderGeometry(limbR, limbR, limbL, 20, 20);
+        var legM = new THREE.Mesh(legG, appleMat[0]);
+        legM.position.y = -limbL/2;
+        leg.add(legM);
+
+        // make a half-sphere foot and add to the leg
+        var footG = new THREE.SphereGeometry(4*limbR, 30, 30, 
+                    0, 2*Math.PI, 0, Math.PI/2);
+        var foot = new THREE.Mesh(footG, appleMat[2]);
+        foot.position.y = -limbL;
+        foot.position.z = 3*limbR;
+        foot.scale.z = 1.5;
+        leg.add(foot);
+
+        // return the final leg object
+        return leg;
+    }
+
+    // makeArm() makes a single arm with a hand
+    function makeArm (limbR, limbL) {
+		var arm = new THREE.Object3D();
+
+        // make a cylinder mesh and add to the arm
+        var armG = new THREE.CylinderGeometry(limbR, limbR, limbL, 20, 20);
+		var armM = new THREE.Mesh(armG, appleMat[0]);
+        armM.position.y = -limbL/2;
+        arm.add(armM);
+
+        // make a spherical hand and add to the arm
+		var handG = new THREE.SphereGeometry(3*limbR, 30, 30);
+		var hand = new THREE.Mesh(handG, appleMat[0]);
+		hand.position.y = -limbL;
+        arm.add(hand);
+
+        // return the final arm object
+        return arm;
+    }
+
+    function makeEye (bodyR) {
+        var eye = new THREE.Object3D();
+
+        // eyebrow
+        var eyebrowGeom = new THREE.CylinderGeometry( bodyR/30, 
+            bodyR/30, 6, 32 );
+        var eyebrow = new THREE.Mesh(eyebrowGeom, appleMat[1]);
+        eyebrow.position.y = 8;
+        eyebrow.rotation.z = Math.PI/2;
+        eye.add(eyebrow);
+
+        // eyeball component
+		var eyeballGeom = new THREE.SphereGeometry(0.06*bodyR, 30, 30);
+        var eyeball = new THREE.Mesh(eyeballGeom, appleMat[1]);
+        eye.add(eyeball);
+        return eye;
+    }
+    
+    function makeMouth (bodyR) {
+        // make mouth and add
+        var mouthGeom = new THREE.TorusGeometry(0.15*bodyR, 
+                        0.04*bodyR, 30, 30, 3*Math.PI/4);
+		var mouth = new THREE.Mesh(mouthGeom, appleMat[1]);
+        return mouth;
+    }   
+
+    function makeTop (limbR,limbL) {
+        var top = new THREE.Object3D();
+
+        // make leaf and stem
+        var stemGeom = new THREE.TorusGeometry(0.5*limbL,
+                       limbR, 30, 30, Math.PI/2);
+        var stem = new THREE.Mesh(stemGeom, appleMat[3]);
+        stem.rotation.z = Math.PI/1.5;
+        stem.rotation.y = Math.PI;
+        stem.position.set(-0.5*limbL,limbR*5,0);
+        top.add(stem);
+
+        // make green leaf
+        var topToBottom = [
+            [ [-5,5,0],  [2,6,1],  [4,4,1],  [6, 3, 0] ],
+            [ [-1,2,0], [2,2,1],  [4,2,1],  [7, 2, 0] ],
+            [ [-1,1,0], [2,1,1],  [4,1,1],  [7, 1, 0] ],
+            [ [0,0,0],  [2,-1,0], [4,-1,0], [9, 0, 0] ],
+        ];
+
+        var leaf1Geom = new THREE.BezierSurfaceGeometry( topToBottom.reverse(), 
+            10, 10 );
+        var leaf1 = new THREE.Mesh(leaf1Geom, appleMat[4]);
+        leaf1.scale.x = 2;
+        leaf1.scale.y = 2;
+        leaf1.position.set(-0.5*limbL,limbR*4,0);
+        top.add(leaf1);
+
+        var leaf2 = leaf1.clone();
+        leaf2.rotation.y = Math.PI;
+        leaf2.position.set(0.5*limbL,limbR*4,0);
+        top.add(leaf2);
+
+        // return the final leaf + stem object
+        return top;
+    }
+}
+
+var apple1 = makeApple(appleR,appleLimbR,appleLimbL);
+apple1.position.x = -100;
+apple1.position.y = -100;
+apple1.rotation.y = Math.PI/4;
+scene.add(apple1);
+
+var apple2 = apple1.clone();
+apple2.position.x = -200;
+apple2.position.z = -110;
+apple2.rotation.y = Math.PI/6;
+scene.add(apple2);
+
+var apple3 = apple2.clone();
+apple3.position.x = -100;
+apple3.rotation.y = 0;
+scene.add(apple3);
+
+// ====================================================================
+// texture loading/array-making
+
+// background textures
+TW.loadTextures(["gymFloor.png", "board.png", 
+                 "ceiling.jpeg", "bleachers.jpeg",
+                 "basketball.jpeg", "scoreboard.jpg"],
+                 function (textures) {
+                    addTextures(textures); } );
+
+// texture array                  
+var textureArray = [];
+
+// filling the texture array of the loaded textures from images
+function addTextures(textures){
+    // gym floor
+    textureArray.push(new THREE.MeshPhongMaterial({
+            color: 0xffffff,
+            map: textures[0],
+            side: THREE.BackSide}));
+
+    // basketball board of hoop
+    textureArray.push(new THREE.MeshPhongMaterial({
+            color: 0xffffff,
+            map: textures[1]}));
+
+    // gym ceiling
+    textureArray.push(new THREE.MeshPhongMaterial({
+            color: 0xffffff,
+            map: textures[2],
+            side: THREE.BackSide}));
+    
+    // gym bleachers
+    textureArray.push(new THREE.MeshPhongMaterial({
+            color: 0xffffff,
+            map: textures[3],
+            side: THREE.BackSide}));
+
+    // basketball texture
+    textureArray.push(new THREE.MeshPhongMaterial({
+            color: 0xffffff,
+            map: textures[4]}));
+
+    // black scoreboard
+    textureArray.push(new THREE.MeshPhongMaterial({
+            color: 0xffffff,
+            map: textures[5]}));
+    TW.render();
+}
+
+// ====================================================================
+// making the gym room
+
+// room background dimensions
+var roomH = 500; // height
+var roomW = 300; // width
+var roomD = 300; // length
+
+// creates the room and adds it to the scene
+function makeRoom () {
+    var roomGeom = new THREE.BoxGeometry(roomH,roomW,roomD);
+    // [+X, -X, +Y, -Y, -Z, +Z]
+    // [right, left, ceiling, floor, back, front]
+    for (var i = 0; i < roomGeom.faces.length; i++ ) {
+        if (i == 4 || i == 5) {
+            roomGeom.faces[i].materialIndex = 2;
+        } else if (i == 6 || i == 7) {
+            roomGeom.faces[i].materialIndex = 0;
+        } else {
+            roomGeom.faces[i].materialIndex = 3;
+        }       
+    }
+    var roomMesh = new THREE.Mesh(roomGeom, textureArray);
+    scene.add(roomMesh);
+    TW.render();
+}
+makeRoom();
+
+// ====================================================================
+// making basketballs
+
+// basketball radius
+var ballR = 25;
+
+function makeBasketball (ballR) {
+    var ballGeom = new THREE.SphereGeometry(ballR, 30, 30);
+    for (var i = 0; i < ballGeom.faces.length; i++ ) {
+        ballGeom.faces[i].materialIndex = 4;      
+    }
+    var ball = new THREE.Mesh(ballGeom, textureArray);
+    return ball;
+    TW.render();
+}
+
+var ball1 = makeBasketball(ballR);
+ball1.position.y = -125;
+ball1.position.x = 200;
+ball1.position.z = -60;
+scene.add(ball1);
+
+var ball2 = ball1.clone();
+ball2.position.x = -200;
+ball2.position.z = 60;
+scene.add(ball2);
+
+var ball3 = ball1.clone();
+ball3.position.x = 80;
+ball3.position.z = 110;
+scene.add(ball3);
+
+var ball4 = ball1.clone();
+ball4.position.y = -125;
+ball4.position.x = 140;
+ball4.position.z = 110;
+ball4.rotation.y = Math.PI;
+scene.add(ball4);
+
+// ====================================================================
+// making the basketball stands/hoops/board
+
+// global variables for basketball backboard
+var boardHeight = 70;
+var boardWidth = 100;
+var standHeight = 50;
+
+var boardMat = [
+    // white board material
+    new THREE.MeshPhongMaterial( {color: new THREE.Color("white"),
+                                  specular: new THREE.Color("gray"),
+                                  shininess: 5,
+                                  flatShading: THREE.SmoothShading} ),
+    // gold stand material
+    new THREE.MeshPhongMaterial( {color: new THREE.Color(0xfcd721),
+                                  specular: new THREE.Color("black"),
+                                  shininess: 10,
+                                  flatShading: THREE.SmoothShading} ) ];
+
+// constructing backboard
+function makeBackboard(boardHeight,boardWidth,standHeight) {
+    var board = new THREE.Object3D();
+
+    // board's rod support
+    var stand1Geom = new THREE.CylinderGeometry(3,3,standHeight,32);
+    var stand1 = new THREE.Mesh(stand1Geom,boardMat[1]);
+    stand1.position.z = -1.5 - standHeight/2;
+    stand1.rotation.x = Math.PI/2;
+    board.add(stand1);
+
+    var stand2Geom = new THREE.CylinderGeometry(3,3,standHeight*3,32);
+    var stand2 = new THREE.Mesh(stand2Geom,boardMat[1]);
+    stand2.position.z = -standHeight;
+    stand2.position.y = -standHeight*3/2;
+    board.add(stand2);
+
+    // board's base
+    var baseGeom = new THREE.CylinderGeometry( 10, 30, 20, 32 );
+    var base = new THREE.Mesh(baseGeom,boardMat[1]);
+    base.position.z = - standHeight;
+    base.position.y = -standHeight*3;
+    board.add(base);
+
+    var hoopGeom = new THREE.BoxGeometry(boardWidth,boardHeight,3);
+    for (var i = 0; i < hoopGeom.faces.length; i++ ) {
+        hoopGeom.faces[i].materialIndex = 1;      
+    }
+    var hoop = new THREE.Mesh(hoopGeom,textureArray);
+    hoop.position.y = 0;
+    hoop.position.x = 0;
+    board.add(hoop);
+
+    return board;
+}
+
+// board on left
+var boardL = makeBackboard(boardHeight,boardWidth,standHeight);
+boardL.position.y = 10;
+boardL.position.x = -160;
+boardL.rotation.y = Math.PI/2;
+scene.add(boardL);
+
+// board on right
+var boardR = boardL.clone();
+boardR.position.x = 160;
+boardR.rotation.y = -Math.PI/2;
+scene.add(boardR);
+
+// ====================================================================
+// animation of the screen on top, the bouncing ball, and the orange pacing
+// back and forth
+
+// state variables for the animation
+var animationState;
+
+// global animation objects
+var screen;
+var ball;
+var orange1;
+var orange1Motion = 0;
+
+// parameters of the scene and animation
+var ballParams = {
+    ballRadius: 25,
+    ballBouncePeriod: 2.5,  // time to bounce once, in arbitrary time units
+    maxBallHeight: 50,     // max y position of the center of the ball
+    deltaT: 0.035,       // time between steps, in arbitrary time units
+    motion: 1
+};
+
+// resets the animationState to its initial setting
+function resetAnimationState() {
+   animationState = {
+       time: 0,
+       ry: 0,
+       ballHeight: ballParams.maxBallHeight
+   };
+}
+resetAnimationState();
+
+function makeBall () {
+    if ( ball != null ) {
+        scene.remove(ball);
+    }
+    ball = makeBasketball(ballR);
+    ball.position.set(-120,animationState.ballHeight,50);
+    scene.add(ball);
+}
+makeBall();
+
+// screen parameters (connector radius and length, 
+// screen's height, width, depth)
+screenParams = {connectorR: 5, connectorL: 50, screenR1: 60, screenR2: 120}
+
+// makes screen displaying the match
+function makeScreen () {
+    if ( screen != null ) {
+        scene.remove(screen);
+    }
+    screen = new THREE.Object3D();
+
+    // make wall connector and board box of screen
+    var connectorG = new THREE.CylinderGeometry(screenParams.connectorR, 
+        screenParams.connectorR, screenParams.connectorL, 20, 20);
+    var connector = new THREE.Mesh(connectorG, boardMat[1]);
+    connector.position.y = 65;
+    screen.add(connector);
+    
+    var screenBoxG = new THREE.BoxGeometry(screenParams.screenR2, 
+        screenParams.screenR1, screenParams.screenR2);
+    for (var i = 0; i < screenBoxG.faces.length; i++ ) {
+        screenBoxG.faces[i].materialIndex = 5;      
+    }
+    var screenBox = new THREE.Mesh(screenBoxG, textureArray);
+    screenBox.position.y = 10;
+    screenBox.rotation.y = Math.PI/4;
+    screen.add(screenBox);
+    
+    screen.position.y = 60;
+    scene.add(screen);
+}
+makeScreen();
+
+function makeOrange1 () {
+    if ( orange1 != null ) {
+        scene.remove(orange1);
+    }
+    orange1 = makeOrange(orangeR,orangeLimbR,orangeLimbL);
+    orange1.position.x = 100;
+    orange1.position.y = -100;
+    orange1.position.z = -30;
+    orange1.rotation.y = -Math.PI/3;
+    scene.add(orange1);
+}
+makeOrange1();
+
+// overall animation functions
+
+// transforms x in the range [minx,maxx] to y in the range [miny,maxy]
+function linearMap (x, minx, maxx, miny, maxy) {
+    // t is in the range [0,1]
+    t = (x-minx)/(maxx-minx);
+    y = t*(maxy-miny)+miny;
+    return y;
+};
+
+// sets the position of the ball based on current time
+function setBallPosition (time) {
+    // rescale the time dimension so that the period of bouncing maps to pi
+    var angle = time * Math.PI / ballParams.ballBouncePeriod; 
+    var abs_cos = Math.abs(Math.cos(angle));
+    var ballHeight = linearMap(abs_cos, 0, 1, 
+                        ballParams.ballRadius, ballParams.maxBallHeight);
+    ball.position.y = -150+ballHeight;
+    return ballHeight;
+}
+
+// resets the screen, ball, and orange to the initial state and renders
+ function firstState() {
+    resetAnimationState();
+    animationState.ballHeight = setBallPosition(animationState.time)
+    // orange1 = makeOrange1();
+    TW.render();
+}
+firstState();
+
+// updates the state of the animation/rotations of the animated objects
+function updateState() {
+    animationState.time += ballParams.deltaT;
+    // screen
+    screen.rotateY(0.01);
+    // ball movement vertically
+    animationState.ballHeight = setBallPosition(animationState.time);
+    // ball movement horizontally
+    ball.position.x += ballParams.motion;
+    orange1.position.z += orange1Motion;
+    if (ball.position.x >  60) {
+        ballParams.motion = -1; // move left
+        orange1Motion = -0.25;
+    }
+    if (ball.position.x < -100) {
+        ballParams.motion =  1; // move right
+        orange1Motion = 0.25;
+    }
+}
+
+// performs one step of the animation
+function oneStep() {
+    updateState();
+    TW.render();
+}
+
+// stored so that we can cancel the animation if we want
+var animationId = null;                
+
+// starts the continuous animation loop
+function animate(timestamp) {
+    oneStep();
+    animationId = requestAnimationFrame(animate);
+}
+
+// halts the animation
+function stopAnimation() {
+    if( animationId != null ) {
+        cancelAnimationFrame(animationId);
+        console.log("Cancelled animation using " + animationId);
+    }
+}
+
+// keyboard controls for animating
+TW.setKeyboardCallback("1",oneStep,"advance by one step");
+TW.setKeyboardCallback("g", animate, "start animation");
+TW.setKeyboardCallback(" ", stopAnimation, "stop animation");
+
+// ====================================================================
+
+// make lighting
+
+//light for the scene to have (ambient, directional, spotlight)
+var ambLight = new THREE.AmbientLight (new THREE.Color(0xffffff),0.95);
+scene.add(ambLight);
+
+var dirLight = new THREE.DirectionalLight (new THREE.Color("lightgray"),0.4);
+dirLight.position.set(0,100,0);
+scene.add(dirLight);
+
+// spotlights
+var spotLight = new THREE.Object3D();
+var spotLightMain = new THREE.SpotLight 
+                ( new THREE.Color("lightgray"),
+                0.5, 0, Math.PI/6, 0.5, 0.8);
+spotLightMain.position.set(0,100,0);
+spotLightMain.target.position.set(0,-100,0);
+
+// adding the two spotLight components to spotLight
+// spotLight.add(spotLightMain);
+// spotLight.add(spotLightMain.target);
+// scene.add(spotLight);
+
+// background as a solid color
+scene.background = new THREE.Color(0xd3ede8);
+
+</script>
+<p>Press:</p>
+<ul>
+    <li>g to start animation</li>
+    <li>space bar to stop animation</li>
+    <li>1 to advance the animation by one step</li>
+</ul>
+<p>Contiuously pressing the g speeds it up / space bar slows it down 
+    until it stops.</p>
+</body>
+</html>
